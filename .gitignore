@@ -9,3 +9,4 @@ dist/
 data/
 config/hub.yaml
 config/hub.yml
+dist-test/
