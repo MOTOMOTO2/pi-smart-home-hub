@@ -34,11 +34,14 @@ interface AgentStatus {
 export class PcAdapter extends DeviceAdapter {
   readonly type = 'pc';
   readonly icon = 'desktop';
-  readonly capabilities: Capability[] = ['power', 'wake', 'sensors'];
+  readonly capabilities: Capability[];
 
   constructor(ctx: DeviceContext, private readonly cfg: PcConfig) {
     super(ctx);
     this.pollIntervalMs = (cfg.pollSeconds ?? 20) * 1000;
+    // Without the agent the hub can wake the PC but has no way to put it back
+    // to sleep, so it must not advertise two-way power control.
+    this.capabilities = cfg.agentUrl ? ['power', 'wake', 'sensors'] : ['wake', 'sensors'];
   }
 
   private get hasAgent(): boolean {
