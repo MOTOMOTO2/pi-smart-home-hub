@@ -1,0 +1,199 @@
+# pi-smart-home-hub configuration
+#
+#   cp config/hub.example.yaml config/hub.yaml   then edit the result.
+#
+# config/hub.yaml is git-ignored. Any string may reference an environment
+# variable as ${VAR} (with an optional ${VAR:-default}), so secrets can live
+# in a .env file or in the systemd unit instead of in here.
+#
+# Find device IP addresses with:  npm run hub -- discover
+
+server:
+  host: 0.0.0.0 # 127.0.0.1 to listen on the Pi only
+  port: 8080
+
+auth:
+  # Leave empty on a trusted home LAN. If set, every API and WebSocket call
+  # needs `Authorization: Bearer <token>` (the dashboard will prompt once).
+  token: ${HUB_TOKEN:-}
+
+# true replaces all network I/O with in-process simulators -- handy for trying
+# the dashboard out, or for developing on a laptop.
+demo: false
+
+logLevel: info # debug | info | warn | error
+dataDir: data # tokens and runtime state (chmod 600, git-ignored)
+
+network:
+  # Your LAN broadcast address. Improves Wake-on-LAN and Xbox wake reliability,
+  # since some routers drop 255.255.255.255. Usually your subnet with .255.
+  broadcastAddress: 192.168.1.255
+
+devices:
+  # ---------------------------------------------------------------- Nanoleaf
+  # Local HTTP API on port 16021. Leave `token` out: hold the controller power
+  # button for 5-7 seconds until the LED flashes, then press Pair in the UI
+  # (or `npm run hub -- pair lights`). The token is saved to data/state.json.
+  - id: lights
+    name: Living Room Panels
+    type: nanoleaf
+    room: Living Room
+    host: 192.168.1.41
+    # port: 16021
+    # token: ${NANOLEAF_TOKEN}
+
+  # ------------------------------------------------------------------ TCL TV
+  # Most TCL sets sold in North America are Roku TVs: they expose the Roku ECP
+  # API on port 8060 with no pairing at all. Check by visiting
+  # http://<tv-ip>:8060/query/device-info in a browser.
+  #
+  # For the TV to answer while it is in standby, enable
+  #   Settings > System > Power > Fast TV Start
+  # Otherwise set `mac` so the hub can fall back to Wake-on-LAN.
+  - id: tv
+    name: Living Room TV
+    type: rokutv
+    room: Living Room
+    host: 192.168.1.52
+    mac: "9C:76:0E:44:55:66" # optional, for Wake-on-LAN
+
+  # If your TCL is a Google TV / Android TV model instead, comment out the
+  # block above and use this one. It drives the set over ADB, so:
+  #   - enable Settings > System > Developer options > Network debugging
+  #   - apt install adb
+  #   - accept the RSA prompt on the TV the first time the hub connects
+  # - id: tv
+  #   name: Living Room TV
+  #   type: androidtv
+  #   host: 192.168.1.52
+  #   adbPort: 5555
+  #   adbPath: adb
+
+  # -------------------------------------------------------------------- Xbox
+  # Wake-from-standby and online status over SmartGlass (UDP 5050).
+  # Requires Settings > General > Power mode = "Instant-on" on the console.
+  #
+  # Leave `liveId` out and turn the console on once: the hub reads it from the
+  # discovery response and remembers it. Or run `npm run hub -- discover`.
+  #
+  # Powering the console OFF needs a signed-in Xbox Live session, which this
+  # hub does not store -- see docs/devices.md.
+  - id: xbox
+    name: Xbox One S
+    type: xbox
+    room: Living Room
+    host: 192.168.1.63
+    # liveId: FD00A1B2C3D4E5F6
+
+  # ---------------------------------------------------------------------- PC
+  # Waking is plain Wake-on-LAN and needs nothing installed, but you must
+  # enable it in the BIOS *and* in the OS network adapter settings. Use the
+  # wired NIC MAC -- Wake-on-WLAN is unreliable.
+  #
+  # Sleep / shutdown / restart / lock need the companion agent:
+  #   see agents/pc-agent/README.md  (one file, no dependencies)
+  - id: pc
+    name: Battlestation
+    type: pc
+    room: Office
+    host: 192.168.1.74
+    mac: "A4:BB:6D:11:22:33"
+    # Without an agent, the hub decides on/off by probing this TCP port
+    # (3389 = Windows RDP, 22 = SSH, 445 = SMB).
+    probePort: 3389
+    # agentUrl: http://192.168.1.74:3445
+    # agentToken: ${PC_AGENT_TOKEN}
+
+  # ----------------------------------------------------------------- Ecobee
+  # Needs your own free developer key: ecobee.com > sign in > Developer >
+  # Create New Application, authorisation method "ecobee PIN". Then press Pair
+  # in the UI to get a 4-character PIN, add it under My Apps on ecobee.com,
+  # and press Complete.
+  - id: thermostat
+    name: Thermostat
+    type: ecobee
+    room: Hallway
+    apiKey: ${ECOBEE_API_KEY}
+    scale: F # F or C, for display and for setpoint commands
+    pollSeconds: 180 # ecobee only aggregates every ~3 minutes
+    # thermostatId: "511941000000"   # only if you have more than one
+
+  # ------------------------------------------------------------------- Ring
+  # Ring has no public API, so the hub signs in the way the mobile app does.
+  # Press Pair, enter your Ring email and password, then the 2FA code Ring
+  # texts or emails you. Only the resulting refresh token is stored -- never
+  # your password.
+  #
+  # Scope is status + stills + the event feed (which drives automations).
+  # Live video is WebRTC and stays in the Ring app.
+  - id: doorbell
+    name: Front Door
+    type: ring
+    room: Entry
+    pollSeconds: 45 # Ring rate-limits aggressively; do not go below ~30
+    # deviceId: 90210               # only if you have several cameras
+    # refreshToken: ${RING_REFRESH_TOKEN}
+
+# ---------------------------------------------------------------------------
+# Scenes: ordered lists of device commands. `delayMs` waits before the next
+# action, which matters for TVs that need a moment after powering on.
+# ---------------------------------------------------------------------------
+scenes:
+  - id: movie-night
+    name: Movie Night
+    icon: film
+    favorite: true
+    actions:
+      - { device: tv, command: power, params: { on: true } }
+      - { delayMs: 2500 }
+      - { device: tv, command: input, params: { input: hdmi2 } }
+      - { device: lights, command: brightness, params: { value: 12 } }
+      - { device: lights, command: color, params: { hex: "#2a1b5e", keepBrightness: true } }
+
+  - id: game-time
+    name: Game Time
+    icon: gamepad
+    favorite: true
+    actions:
+      - { device: xbox, command: wake }
+      - { device: tv, command: power, params: { on: true } }
+      - { delayMs: 2500 }
+      - { device: tv, command: input, params: { input: hdmi1 } }
+      - { device: lights, command: effect, params: { name: Nemo } }
+
+  - id: goodnight
+    name: Goodnight
+    icon: moon
+    favorite: true
+    actions:
+      - { device: tv, command: power, params: { on: false } }
+      - { device: lights, command: power, params: { on: false } }
+      - { device: thermostat, command: setpoint, params: { heat: 64, cool: 78 } }
+      - { device: pc, command: sleep }
+
+# ---------------------------------------------------------------------------
+# Automations. Triggers are one of:
+#   when: { event: ring.ding }                       hub events, see docs/api.md
+#   when: { schedule: "30 7 * * 1-5" }               5-field cron
+#   when: { deviceState: { device: x, path: on, equals: false } }
+#                                                    also `above` / `below`
+# `between` limits the active window, `cooldownSeconds` debounces repeats.
+# ---------------------------------------------------------------------------
+automations:
+  - id: doorbell-lights
+    name: Flash the lights when someone rings
+    when: { event: ring.ding }
+    cooldownSeconds: 30
+    run:
+      - { device: lights, command: power, params: { on: true } }
+      - { device: lights, command: color, params: { hex: "#ffffff" } }
+      - { device: lights, command: brightness, params: { value: 100 } }
+
+  - id: night-motion
+    name: Night-time motion night-light
+    when: { event: ring.motion }
+    between: { from: "22:00", to: "06:00" }
+    cooldownSeconds: 120
+    run:
+      - { device: lights, command: power, params: { on: true } }
+      - { device: lights, command: brightness, params: { value: 25 } }

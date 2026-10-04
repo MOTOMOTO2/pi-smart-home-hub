@@ -1,0 +1,27 @@
+{
+  "name": "pi-smart-home-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted smart home hub for Raspberry Pi: Nanoleaf, TCL TV, Xbox One S, PC, Ecobee, Ring",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "workspaces": [
+    "server",
+    "web",
+    "agents/pc-agent"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace server && npm run build --workspace web",
+    "build:server": "npm run build --workspace server",
+    "build:web": "npm run build --workspace web",
+    "start": "node server/dist/index.js",
+    "test": "npm run test --workspace server",
+    "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
+    "smoke": "node scripts/smoke.mjs",
+    "hub": "node server/dist/cli.js",
+    "verify": "npm run typecheck && npm run build && npm run test && npm run smoke"
+  },
+  "license": "MIT"
+}

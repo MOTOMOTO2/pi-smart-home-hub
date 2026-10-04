@@ -1,0 +1,13 @@
+{
+  "name": "@hub/pc-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tiny zero-dependency agent that lets the hub sleep, shut down, restart or lock this PC",
+  "bin": {
+    "hub-pc-agent": "agent.mjs"
+  },
+  "scripts": {
+    "start": "node agent.mjs"
+  }
+}

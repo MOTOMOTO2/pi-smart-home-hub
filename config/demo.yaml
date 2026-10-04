@@ -1,0 +1,144 @@
+# Bundled demo profile -- used automatically when config/hub.yaml is absent.
+#
+# Every device here is simulated in-process by the fake transport in
+# server/src/net/sim, so the whole dashboard works with no hardware on the
+# bench. The adapter code is identical to the real thing; only the network
+# layer is swapped out. Copy config/hub.example.yaml to config/hub.yaml when
+# you are ready to point it at your actual house.
+
+demo: true
+logLevel: info
+
+server:
+  host: 0.0.0.0
+  port: 8080
+
+devices:
+  - id: lights
+    name: Hexagons
+    type: nanoleaf
+    room: Living Room
+    host: 10.0.0.41
+    # Pre-paired so the demo has something to show. Delete this line and press
+    # Pair in the UI to exercise the real pairing flow against the simulator.
+    token: demo-nanoleaf-token
+
+  - id: tv
+    name: Living Room TV
+    type: rokutv
+    room: Living Room
+    host: 10.0.0.52
+    mac: "9C:76:0E:44:55:66"
+
+  - id: xbox
+    name: Xbox One S
+    type: xbox
+    room: Living Room
+    host: 10.0.0.63
+    liveId: FD00A1B2C3D4E5F6
+
+  - id: pc
+    name: Battlestation
+    type: pc
+    room: Office
+    host: 10.0.0.74
+    mac: "A4:BB:6D:11:22:33"
+    agentUrl: http://10.0.0.74:3445
+    agentToken: demo-token
+
+  - id: thermostat
+    name: Thermostat
+    type: ecobee
+    room: Hallway
+    apiKey: demo-api-key
+    refreshToken: demo-ecobee-refresh
+    scale: F
+    pollSeconds: 30
+
+  - id: doorbell
+    name: Front Door
+    type: ring
+    room: Entry
+    refreshToken: demo-ring-refresh-token
+    pollSeconds: 15
+
+scenes:
+  - id: movie-night
+    name: Movie Night
+    icon: film
+    favorite: true
+    actions:
+      - { device: tv, command: power, params: { on: true } }
+      - { delayMs: 800 }
+      - { device: tv, command: input, params: { input: hdmi2 } }
+      - { device: lights, command: brightness, params: { value: 12 } }
+      - { device: lights, command: color, params: { hex: "#2a1b5e", keepBrightness: true } }
+
+  - id: game-time
+    name: Game Time
+    icon: gamepad
+    favorite: true
+    actions:
+      - { device: xbox, command: wake }
+      - { device: tv, command: power, params: { on: true } }
+      - { delayMs: 800 }
+      - { device: tv, command: input, params: { input: hdmi1 } }
+      - { device: lights, command: effect, params: { name: Nemo } }
+
+  - id: good-morning
+    name: Good Morning
+    icon: sun
+    favorite: true
+    actions:
+      - { device: lights, command: power, params: { on: true } }
+      - { device: lights, command: colorTemp, params: { kelvin: 5200 } }
+      - { device: lights, command: brightness, params: { value: 85 } }
+      - { device: thermostat, command: setpoint, params: { heat: 70, cool: 76 } }
+
+  - id: goodnight
+    name: Goodnight
+    icon: moon
+    favorite: true
+    actions:
+      - { device: tv, command: power, params: { on: false } }
+      - { device: lights, command: power, params: { on: false } }
+      - { device: thermostat, command: setpoint, params: { heat: 64, cool: 78 } }
+      - { device: pc, command: sleep }
+
+  - id: doorbell-alert
+    name: Doorbell Alert
+    icon: bell
+    actions:
+      - { device: lights, command: power, params: { on: true } }
+      - { device: lights, command: color, params: { hex: "#ffffff" } }
+      - { device: lights, command: brightness, params: { value: 100 } }
+      - { device: doorbell, command: snapshot }
+
+automations:
+  - id: doorbell-lights
+    name: Flash the lights when someone rings
+    when: { event: ring.ding }
+    cooldownSeconds: 30
+    scene: doorbell-alert
+
+  - id: night-motion
+    name: Night-time motion night-light
+    when: { event: ring.motion }
+    between: { from: "22:00", to: "06:00" }
+    cooldownSeconds: 120
+    run:
+      - { device: lights, command: power, params: { on: true } }
+      - { device: lights, command: brightness, params: { value: 25 } }
+
+  - id: weekday-wakeup
+    name: Weekday wake-up
+    when: { schedule: "30 7 * * 1-5" }
+    scene: good-morning
+
+  - id: cold-house
+    name: Warn when the house gets cold
+    when:
+      deviceState: { device: thermostat, path: temperature, below: 62 }
+    cooldownSeconds: 3600
+    run:
+      - { device: lights, command: color, params: { hex: "#3b82f6" } }
