@@ -271,6 +271,8 @@ try {
 
   await page.locator('.tile', { hasText: 'Hexagons' }).locator('.tile-main').click();
   await page.waitForSelector('.modal');
+  // Let the open animation settle, otherwise the shot catches it half faded in.
+  await page.waitForTimeout(600);
   await page.screenshot({ path: path.join(SHOTS, 'device-panel.png') });
   await page.locator('.modal-head .icon-btn').click();
   await page.locator('.tab', { hasText: 'Settings' }).click();
