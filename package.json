@@ -21,7 +21,9 @@
     "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
     "smoke": "node scripts/smoke.mjs",
     "hub": "node server/dist/cli.js",
-    "verify": "npm run typecheck && npm run build && npm run test && npm run smoke"
+    "verify": "npm run typecheck && npm run build && npm run test && npm run smoke",
+    "dev:web": "npm run dev --workspace web",
+    "ui-check": "node scripts/ui-check.mjs"
   },
   "license": "MIT"
 }

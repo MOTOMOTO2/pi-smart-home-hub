@@ -1,0 +1,44 @@
+[Unit]
+Description=Pi smart home hub
+Documentation=https://github.com/MOTOMOTO2/pi-smart-home-hub
+# Device discovery needs a routable address, not just a configured interface.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hub
+Group=hub
+WorkingDirectory=/opt/pi-smart-home-hub
+ExecStart=/usr/bin/node /opt/pi-smart-home-hub/server/dist/index.js
+Restart=always
+RestartSec=5
+
+# Secrets belong here rather than in the unit file or in config/hub.yaml.
+# Create it with `sudo install -m 600 -o hub -g hub /dev/null /etc/pi-smart-home-hub.env`
+# and reference the variables as ${NAME} inside config/hub.yaml.
+EnvironmentFile=-/etc/pi-smart-home-hub.env
+Environment=NODE_ENV=production
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hub
+
+# Hardening. The hub needs no privileges beyond opening its own port and
+# sending UDP broadcasts, both of which work unprivileged.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/pi-smart-home-hub/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target
