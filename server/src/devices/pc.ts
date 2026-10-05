@@ -118,7 +118,7 @@ export class PcAdapter extends DeviceAdapter {
       case 'power': {
         const on = bool(params, 'on');
         if (on) return await this.doWake();
-        return await this.agentAction('shutdown', 'Shutting down');
+        return await this.agentAction('sleep', 'Going to Sleep');
       }
 
       case 'sleep':
