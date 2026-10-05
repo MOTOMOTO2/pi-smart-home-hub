@@ -11,6 +11,7 @@ import { SimTransport } from '../../net/sim/index.js';
 import type { Transport } from '../../net/transport.js';
 import { statusForError } from '../../errors.js';
 import { errorMessage } from '../../util/async.js';
+import { XboxAdapter } from '../../devices/xbox.js';
 
 const commandSchema = z.object({
   command: z.string().min(1),
@@ -147,6 +148,23 @@ export function createApiRouter(hub: Hub, transport: Transport, version: string)
         await adapter.pairComplete();
         await hub.refreshDevice(adapter.id).catch(() => {});
         res.json({ paired: true, message: 'Ecobee paired' });
+        return;
+      }
+      
+      if (adapter instanceof XboxAdapter) {
+        if (step === 'start') {
+          const { pin, expiresInSeconds } = await adapter.pairStart();
+          res.json({
+            paired: false,
+            pin,
+            expiresInSeconds,
+            message: `Enter code ${pin} at https://www.microsoft.com/link, sign in with your Xbox account, then run pair again with step=complete.`,
+          });
+          return;
+        }
+        await adapter.pairComplete();
+        await hub.refreshDevice(adapter.id).catch(() => {});
+        res.json({ paired: true, message: 'Signed in to Xbox Live' });
         return;
       }
 

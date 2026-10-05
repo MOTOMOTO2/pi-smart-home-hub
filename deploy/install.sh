@@ -88,6 +88,8 @@ ENV
 fi
 
 # ---------------------------------------------------------------- service
+mkdir -p /opt/pi-smart-home-hub/.android
+chown hub:hub /opt/pi-smart-home-hub/.android
 say "installing the systemd unit"
 sed "s|/opt/pi-smart-home-hub|$APP_DIR|g; s|^User=hub$|User=$USER_NAME|; s|^Group=hub$|Group=$USER_NAME|" \
   deploy/$SERVICE.service > /etc/systemd/system/$SERVICE.service
