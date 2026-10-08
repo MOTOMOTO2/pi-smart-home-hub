@@ -96,10 +96,10 @@ devices:
     name: Battlestation
     type: pc
     room: My room
-    host: 192.168.4.82
+    host: 192.168.4.44
     mac: "84:1B:77:E0:C4:B9"
     broadcastAddress: 192.168.7.255
-    agentUrl: http://192.168.4.144:3445
+    agentUrl: http://192.168.4.44:3445
     agentToken: ${PC_AGENT_TOKEN}
     # Without an agent, the hub decides on/off by probing this TCP port
     # (3389 = Windows RDP, 22 = SSH, 445 = SMB).
