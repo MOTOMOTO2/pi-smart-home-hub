@@ -63,7 +63,7 @@ Raspberry Pi OS 64-bit (Bookworm) on a Pi 4. Everything here is pure
 JavaScript, so `npm ci` has nothing to compile on ARM.
 
 ```bash
-git clone https://github.com/MOTOMOTO2/pi-smart-home-hub
+git clone https://github.com/adenyadegar/pi-smart-home-hub
 cd pi-smart-home-hub
 sudo ./deploy/install.sh
 ```

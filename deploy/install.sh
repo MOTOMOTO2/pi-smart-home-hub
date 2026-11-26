@@ -3,7 +3,7 @@
 # Installs the hub on a Raspberry Pi (or any Debian-ish Linux) as a systemd
 # service. Safe to re-run: it upgrades an existing install in place.
 #
-#   git clone https://github.com/MOTOMOTO2/pi-smart-home-hub
+#   git clone https://github.com/adenyadegar/pi-smart-home-hub
 #   cd pi-smart-home-hub
 #   sudo ./deploy/install.sh
 #

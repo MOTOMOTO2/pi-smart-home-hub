@@ -1,6 +1,6 @@
 [Unit]
 Description=Pi smart home hub
-Documentation=https://github.com/MOTOMOTO2/pi-smart-home-hub
+Documentation=https://github.com/adenyadegar/pi-smart-home-hub
 # Device discovery needs a routable address, not just a configured interface.
 After=network-online.target
 Wants=network-online.target
